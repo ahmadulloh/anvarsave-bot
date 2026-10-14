@@ -1,7 +1,9 @@
 import asyncio
 import logging
+import os
 import sys
 
+from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -30,6 +32,23 @@ async def periodic_cleanup():
         except Exception as e:
             logger.error(f"Error in cleanup loop: {e}")
 
+async def start_web_server():
+    """Lightweight health check web server to keep bot alive on Render/Koyeb Free Tier"""
+    async def handle_ping(request):
+        return web.Response(text="Bot @anvarsave_bot is active and running 24/7!", status=200)
+
+    app = web.Application()
+    app.router.add_get("/", handle_ping)
+    app.router.add_get("/health", handle_ping)
+
+    port = int(os.getenv("PORT", 8080))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    logger.info(f"Health-check web server started on port {port}")
+    return runner
+
 async def main():
     if not BOT_TOKEN:
         logger.error("BOT_TOKEN is not defined in config or .env!")
@@ -45,6 +64,9 @@ async def main():
     dp.include_router(callback_router)
     dp.include_router(user_router)
 
+    # Start health check server for free hosting
+    web_runner = await start_web_server()
+
     # Start periodic file cleanup task
     cleanup_task = asyncio.create_task(periodic_cleanup())
 
@@ -57,6 +79,7 @@ async def main():
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
         cleanup_task.cancel()
+        await web_runner.cleanup()
         await bot.session.close()
 
 if __name__ == "__main__":
