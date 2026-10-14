@@ -1,0 +1,11 @@
+services:
+  - type: worker
+    name: anvarsave-bot
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: BOT_USERNAME
+        value: anvarsave_bot

@@ -1,0 +1,7 @@
+aiogram>=3.15.0
+yt-dlp>=2025.1.0
+shazamio>=0.8.0
+aiohttp>=3.9.0
+python-dotenv>=1.0.0
+static-ffmpeg>=2.5
+aiofiles>=23.2.0
