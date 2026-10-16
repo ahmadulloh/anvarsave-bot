@@ -17,8 +17,14 @@ BOT_TOKEN_1 = os.getenv("BOT_TOKEN_1", os.getenv("BOT_TOKEN", "8719226279:AAH3nW
 BOT_TOKEN_2 = os.getenv("BOT_TOKEN_2", "").strip()
 BOT_TOKEN_3 = os.getenv("BOT_TOKEN_3", "").strip()
 
-# Collect all configured tokens in order
-BOT_TOKENS = [t for t in [BOT_TOKEN_1, BOT_TOKEN_2, BOT_TOKEN_3] if t]
+# Collect all configured tokens in order, strictly ensuring no duplicates
+seen_tokens = set()
+BOT_TOKENS = []
+for t in [BOT_TOKEN_1, BOT_TOKEN_2, BOT_TOKEN_3]:
+    if t and t not in seen_tokens:
+        seen_tokens.add(t)
+        BOT_TOKENS.append(t)
+
 
 BOT_USERNAME = os.getenv("BOT_USERNAME", "anvarsave_bot").replace("@", "").strip()
 

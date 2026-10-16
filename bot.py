@@ -67,8 +67,9 @@ async def main():
 
     valid_bots: list[Bot] = []
     bot_names: list[str] = []
+    seen_bot_ids: set[int] = set()
 
-    # Initialize each configured bot
+    # Initialize each configured bot (preventing any duplicate bot instances)
     for idx, token in enumerate(BOT_TOKENS):
         bot = Bot(
             token=token,
@@ -77,12 +78,21 @@ async def main():
         try:
             await bot.delete_webhook(drop_pending_updates=True)
             me = await bot.get_me()
-            profile = PROFILES[idx % len(PROFILES)]
-            register_bot_profile(token, idx, bot_id=me.id, username=me.username)
+
+            if me.id in seen_bot_ids:
+                logger.warning(
+                    f"⚠️ Bot #{idx + 1} (@{me.username}, id={me.id}) dublikat bot! Bitta botni bir nechta o'zgaruvchiga qo'shib bo'lmaydi. O'tkazib yuborildi."
+                )
+                await bot.session.close()
+                continue
+
+            seen_bot_ids.add(me.id)
+            profile = PROFILES[len(valid_bots) % len(PROFILES)]
+            register_bot_profile(token, len(valid_bots), bot_id=me.id, username=me.username)
             valid_bots.append(bot)
             bot_names.append(me.username)
             logger.info(
-                f"✅ Bot #{idx + 1} muvaffaqiyatli ulandi: @{me.username} (Profil: '{profile.name}')"
+                f"✅ Bot #{len(valid_bots)} muvaffaqiyatli ulandi: @{me.username} (Profil: '{profile.name}')"
             )
         except Exception as e:
             logger.error(f"❌ Bot #{idx + 1} tokeni bilan ulanishda xatolik: {e}")
@@ -92,7 +102,7 @@ async def main():
         logger.error("Birorta ham bot muvaffaqiyatli ishga tushmadi!")
         sys.exit(1)
 
-    logger.info(f"Jami {len(valid_bots)} ta bot bir vaqtda parallel ishga tushirilmoqda...")
+    logger.info(f"Jami {len(valid_bots)} ta alohida bot bir vaqtda parallel ishga tushirilmoqda...")
 
     # Start health check server
     web_runner = await start_web_server(bot_names)
@@ -100,16 +110,27 @@ async def main():
     # Start periodic file cleanup task
     cleanup_task = asyncio.create_task(periodic_cleanup())
 
+    # Small pause to allow any prior container to release long-polling cleanly
+    await asyncio.sleep(2)
+
     try:
         # Start concurrent polling for all valid bot instances
-        await dp.start_polling(*valid_bots, allowed_updates=dp.resolve_used_update_types())
+        await dp.start_polling(
+            *valid_bots,
+            allowed_updates=dp.resolve_used_update_types(),
+            handle_signals=True
+        )
     finally:
         cleanup_task.cancel()
         await web_runner.cleanup()
         await close_http_session()
         for b in valid_bots:
-            await b.session.close()
+            try:
+                await b.session.close()
+            except Exception:
+                pass
         logger.info("Barcha botlar to'xtatildi.")
+
 
 if __name__ == "__main__":
     try:
