@@ -3,15 +3,22 @@ from pathlib import Path
 
 from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, FSInputFile
+from aiogram.types import Message, FSInputFile, URLInputFile
 
 from config import DOWNLOAD_DIR, MAX_FILE_SIZE
 from services.downloader import (
     extract_first_url,
+    detect_platform,
+    extract_youtube_video_id,
+    get_youtube_preview_info,
     download_media
 )
 from utils.bot_profiles import get_bot_profile, get_bot_username
-from utils.keyboards import get_start_keyboard, get_video_keyboard
+from utils.keyboards import (
+    get_start_keyboard,
+    get_video_keyboard,
+    get_youtube_preview_keyboard
+)
 
 logger = logging.getLogger(__name__)
 user_router = Router()
@@ -41,6 +48,48 @@ async def handle_text(message: Message, bot: Bot):
     if url:
         profile = get_bot_profile(bot)
         username = await get_bot_username(bot)
+        platform = detect_platform(url)
+
+        # YouTube UI matching Image 3 (SaqlaBot): Preview photo + format buttons
+        if platform == "youtube":
+            video_id = extract_youtube_video_id(url)
+            if not video_id:
+                await message.reply("❌ <b>YouTube havolasi yaroqsiz.</b>", parse_mode="HTML")
+                return
+
+            yt_info = await get_youtube_preview_info(video_id)
+            title = yt_info.get("title", "YouTube Video")
+            author = yt_info.get("author", "YouTube")
+            thumb_url = yt_info.get("thumbnail_url", f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg")
+
+            caption = f"📼 <b>{title} | {author} →</b>\n\nYuklab olish formatlari ↓"
+            keyboard = get_youtube_preview_keyboard(video_id)
+
+            try:
+                await message.reply_photo(
+                    photo=URLInputFile(thumb_url),
+                    caption=caption,
+                    reply_markup=keyboard,
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                logger.warning(f"URLInputFile photo send error: {e}")
+                try:
+                    await message.reply_photo(
+                        photo=thumb_url,
+                        caption=caption,
+                        reply_markup=keyboard,
+                        parse_mode="HTML"
+                    )
+                except Exception as e2:
+                    logger.error(f"Fallback photo send error: {e2}")
+                    await message.reply(
+                        caption,
+                        reply_markup=keyboard,
+                        parse_mode="HTML"
+                    )
+            return
+
         status_msg = await message.reply(profile.loading_text, parse_mode="HTML")
         try:
             res = await download_media(url)

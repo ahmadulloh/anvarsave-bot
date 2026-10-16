@@ -13,12 +13,21 @@ from urllib.parse import quote
 import aiohttp
 import yt_dlp
 
+try:
+    import static_ffmpeg
+    static_ffmpeg.add_paths()
+except Exception:
+    pass
+
 from config import DOWNLOAD_DIR, MAX_FILE_SIZE
 
 logger = logging.getLogger(__name__)
 
 # In-memory storage for media info to support "Qo'shiqni yuklab olish" button
 MEDIA_CACHE: dict[str, dict] = {}
+
+# In-memory storage for YouTube preview information
+YOUTUBE_INFO_CACHE: dict[str, dict] = {}
 
 # Reusable client session for high performance & connection pooling
 _HTTP_SESSION: aiohttp.ClientSession | None = None
@@ -43,7 +52,7 @@ async def close_http_session():
 URL_PATTERNS = {
     "tiktok": re.compile(r"https?://(?:[a-zA-Z0-9_-]+\.)?tiktok\.com/[^\s]+", re.IGNORECASE),
     "instagram": re.compile(r"https?://(?:www\.)?instagram\.com/(?:reel|reels|p|tv|share)/[^\s]+", re.IGNORECASE),
-    "youtube": re.compile(r"https?://(?:www\.)?(?:youtube\.com/(?:watch\?v=|shorts/|embed/)|youtu\.be/)[a-zA-Z0-9_-]+[^\s]*", re.IGNORECASE),
+    "youtube": re.compile(r"https?://(?:www\.)?(?:youtube\.com/(?:watch\?v=|shorts/|embed/|live/|v/)|youtu\.be/)[a-zA-Z0-9_-]+[^\s]*", re.IGNORECASE),
     "pinterest": re.compile(r"https?://(?:[a-zA-Z0-9]+\.)?(?:pinterest\.com/pin/|pin\.it/)[^\s]+", re.IGNORECASE),
     "likee": re.compile(r"https?://(?:[a-zA-Z0-9]+\.)?likee\.video/[^\s]+", re.IGNORECASE),
     "snapchat": re.compile(r"https?://(?:www\.)?snapchat\.com/[^\s]+", re.IGNORECASE),
@@ -55,6 +64,49 @@ def detect_platform(url: str) -> str | None:
         if pattern.search(url):
             return platform
     return None
+
+def extract_youtube_video_id(url: str) -> str | None:
+    """Extract canonical 11-char YouTube video ID from various URL formats"""
+    patterns = [
+        r"(?:youtu\.be/|v/|u/\w/|embed/|shorts/|live/)([\w-]{11})",
+        r"(?:watch\?v=|&v=)([\w-]{11})",
+    ]
+    for p in patterns:
+        m = re.search(p, url)
+        if m:
+            return m.group(1)
+    return None
+
+async def get_youtube_preview_info(video_id: str) -> dict:
+    """Fetch YouTube metadata (title, author, thumbnail) via oEmbed with fallback"""
+    if video_id in YOUTUBE_INFO_CACHE:
+        return YOUTUBE_INFO_CACHE[video_id]
+
+    oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+    thumb_url = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+    title = "YouTube Video"
+    author = "YouTube"
+
+    try:
+        session = await get_http_session()
+        async with session.get(oembed_url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                title = data.get("title") or title
+                author = data.get("author_name") or author
+                thumb_url = data.get("thumbnail_url") or thumb_url
+    except Exception as e:
+        logger.warning(f"oEmbed fetch error for {video_id}: {e}")
+
+    info = {
+        "video_id": video_id,
+        "title": title,
+        "author": author,
+        "thumbnail_url": thumb_url
+    }
+    YOUTUBE_INFO_CACHE[video_id] = info
+    return info
+
 
 def extract_first_url(text: str) -> str | None:
     """Extract first supported media URL from text"""
@@ -271,6 +323,11 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple
         "noplaylist": True,
         "socket_timeout": 30,
         "nocheckcertificate": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "ios", "web_creator", "mweb"]
+            }
+        }
     }
     if ffmpeg_bin:
         base_opts["ffmpeg_location"] = ffmpeg_bin
@@ -283,17 +340,18 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple
 
     if is_audio:
         audio_formats = [
+            "140/ba/b",
             "bestaudio/best",
-            "ba/b",
         ]
         for fmt in audio_formats:
             ydl_opts = dict(base_opts)
             ydl_opts["format"] = fmt
-            ydl_opts["postprocessors"] = [{
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "192",
-            }]
+            if ffmpeg_bin:
+                ydl_opts["postprocessors"] = [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "192",
+                }]
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
@@ -306,10 +364,10 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple
                     last_error_str = "bot_detection"
         return None, last_error_str
     else:
-        # Prioritize 720p HD so downloaded video stays within Telegram's 50MB limit
+        # Prioritize progressive formats (22, 18) to avoid SABR / 403 blocks on server IPs
         video_formats = [
-            "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best[height<=720]/best",
-            "bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480]/best",
+            "22/18/best[height<=720][ext=mp4]/best[height<=720]/best",
+            "18/best[height<=480][ext=mp4]/best",
             "best[filesize<=48M]/best",
         ]
         for fmt in video_formats:
@@ -371,6 +429,150 @@ async def download_with_ytdlp(url: str, platform: str = "general") -> dict:
         "token": token,
         "has_audio": has_audio
     }
+
+# ================= YOUTUBE DOWNLOADER (MATCHING SAQLABOT) =================
+def _run_youtube_download_sync(video_id: str, is_audio: bool = False) -> tuple[dict | None, str | None]:
+    """Synchronous downloader for YouTube targeting fast progressive formats & mp3"""
+    url = f"https://www.youtube.com/watch?v={video_id}"
+    ffmpeg_bin = get_ffmpeg_path()
+    file_id = f"yt_{video_id}_{uuid.uuid4().hex[:6]}"
+    outtmpl = str(DOWNLOAD_DIR / f"{file_id}.%(ext)s")
+
+    base_opts = {
+        "outtmpl": outtmpl,
+        "quiet": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "socket_timeout": 30,
+        "nocheckcertificate": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "ios", "web_creator", "mweb"]
+            }
+        }
+    }
+    if ffmpeg_bin:
+        base_opts["ffmpeg_location"] = ffmpeg_bin
+
+    from config import COOKIES_PATH
+    if COOKIES_PATH and COOKIES_PATH.exists():
+        base_opts["cookiefile"] = str(COOKIES_PATH)
+
+    last_error = None
+
+    if is_audio:
+        # Download audio stream or progressive 18 and convert to mp3
+        audio_formats = [
+            "140/ba/b",
+            "18/best[height<=720]/best",
+        ]
+        for fmt in audio_formats:
+            ydl_opts = dict(base_opts)
+            ydl_opts["format"] = fmt
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    if info:
+                        files = list(DOWNLOAD_DIR.glob(f"{file_id}.*"))
+                        if files:
+                            src_file = files[0]
+                            mp3_file = DOWNLOAD_DIR / f"{file_id}.mp3"
+                            if src_file.suffix.lower() == ".mp3":
+                                final_audio = src_file
+                            else:
+                                if extract_audio_from_video(src_file, mp3_file):
+                                    try:
+                                        src_file.unlink()
+                                    except Exception:
+                                        pass
+                                    final_audio = mp3_file
+                                else:
+                                    final_audio = src_file
+
+                            return {
+                                "file_path": str(final_audio),
+                                "title": info.get("title", ""),
+                                "author": info.get("uploader", "") or info.get("channel", ""),
+                                "duration": info.get("duration", 0),
+                                "is_audio": True
+                            }, None
+            except Exception as e:
+                err_msg = str(e)
+                logger.warning(f"yt-dlp youtube audio with '{fmt}' failed: {err_msg}")
+                if "Sign in to confirm you" in err_msg or "bot" in err_msg.lower():
+                    last_error = "bot_detection"
+        return None, last_error
+    else:
+        # Download video: prioritize 22 (720p), 18 (360p) progressive streams
+        video_formats = [
+            "22/18/best[height<=720][ext=mp4]/best[height<=720]/best",
+            "18/best[height<=480][ext=mp4]/best",
+            "best[filesize<=48M]/best",
+        ]
+        for fmt in video_formats:
+            ydl_opts = dict(base_opts)
+            ydl_opts["format"] = fmt
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    if info:
+                        files = list(DOWNLOAD_DIR.glob(f"{file_id}.*"))
+                        if files:
+                            return {
+                                "file_path": str(files[0]),
+                                "title": info.get("title", ""),
+                                "author": info.get("uploader", "") or info.get("channel", ""),
+                                "duration": info.get("duration", 0),
+                                "is_audio": False
+                            }, None
+            except Exception as e:
+                err_msg = str(e)
+                logger.warning(f"yt-dlp youtube video with '{fmt}' failed: {err_msg}")
+                if "Sign in to confirm you" in err_msg or "bot" in err_msg.lower():
+                    last_error = "bot_detection"
+        return None, last_error
+
+async def download_youtube(video_id: str, is_audio: bool = False) -> dict:
+    """Asynchronous entry point for downloading YouTube video or audio"""
+    loop = asyncio.get_running_loop()
+    res, err = await loop.run_in_executor(None, _run_youtube_download_sync, video_id, is_audio)
+    if not res or not res.get("file_path"):
+        return {"file_path": None, "error": err}
+
+    file_path = res["file_path"]
+    title = res.get("title", "")
+    author = res.get("author", "")
+    duration = res.get("duration", 0)
+
+    # Use oEmbed cached metadata if available for clean title/author
+    cached = YOUTUBE_INFO_CACHE.get(video_id, {})
+    if not title or title in ["Video", "YouTube Video"]:
+        title = cached.get("title", title)
+    if not author or author in ["YouTube", "youtube"]:
+        author = cached.get("author", author)
+
+    token = uuid.uuid4().hex[:12]
+    MEDIA_CACHE[token] = {
+        "video_path": file_path if not is_audio else None,
+        "audio_url": None,
+        "audio_path": file_path if is_audio else None,
+        "title": title,
+        "artist": author,
+        "has_audio": True,
+        "created_at": time.time(),
+    }
+
+    return {
+        "media_type": "audio" if is_audio else "video",
+        "file_path": file_path,
+        "title": title,
+        "author": author,
+        "duration": duration,
+        "token": token,
+        "has_audio": True,
+        "error": None
+    }
+
 
 # ================= AUDIO EXTRACTOR / DOWNLOADER =================
 async def get_or_extract_audio(token: str) -> dict | None:
@@ -435,6 +637,9 @@ async def download_media(url: str) -> dict | None:
     elif platform == "instagram":
         return await download_instagram(url)
     elif platform == "youtube":
+        v_id = extract_youtube_video_id(url)
+        if v_id:
+            return await download_youtube(v_id, is_audio=False)
         return await download_with_ytdlp(url, platform="youtube")
     elif platform == "pinterest":
         return await download_with_ytdlp(url, platform="pinterest")

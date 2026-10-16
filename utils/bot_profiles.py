@@ -1,6 +1,12 @@
+import re
 from dataclasses import dataclass
 from typing import Dict
 from aiogram import Bot
+
+def make_hashtag(name: str) -> str:
+    """Format name into a clean Telegram hashtag, e.g. 'Mittivine' -> '#Mittivine'"""
+    cleaned = re.sub(r"[^\w\s]", "", name).strip()
+    return f"#{cleaned.replace(' ', '_')}" if cleaned else "#YouTube"
 
 @dataclass
 class BotProfile:
@@ -21,7 +27,18 @@ class BotProfile:
         return self.help_text_template.format(bot_username=username)
 
     def format_video_caption(self, username: str, title: str = "", author: str = "") -> str:
+        if title and author and len(title) > 2 and author not in ["Instagram", "TikTok", "YouTube"]:
+            tag = make_hashtag(author)
+            footer = self.video_caption_template.format(bot_username=username, title=title, author=author)
+            return f"📼 <b>{title[:50]} | {author} →</b>\n👤 {tag} →\n\n{footer}"
         return self.video_caption_template.format(bot_username=username, title=title, author=author)
+
+    def format_youtube_caption(self, username: str, title: str = "", author: str = "") -> str:
+        clean_title = title.strip() if title else "Video"
+        clean_author = author.strip() if author else "YouTube"
+        tag = make_hashtag(clean_author)
+        footer = self.video_caption_template.format(bot_username=username, title=clean_title, author=clean_author)
+        return f"📼 <b>{clean_title} | {clean_author} →</b>\n👤 {tag} →\n\n{footer}"
 
     def format_audio_caption(self, username: str, title: str = "", author: str = "") -> str:
         return self.audio_caption_template.format(bot_username=username, title=title, author=author)
