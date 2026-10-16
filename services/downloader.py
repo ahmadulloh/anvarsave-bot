@@ -260,7 +260,7 @@ def get_ffmpeg_path() -> str | None:
     return shutil.which("ffmpeg")
 
 # ================= GENERAL YT-DLP DOWNLOADER =================
-def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> dict | None:
+def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple[dict | None, str | None]:
     """Synchronous yt-dlp worker with robust formats and ffmpeg integration"""
     ffmpeg_bin = get_ffmpeg_path()
 
@@ -275,10 +275,11 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> dict 
     if ffmpeg_bin:
         base_opts["ffmpeg_location"] = ffmpeg_bin
 
-    from config import BASE_DIR
-    cookies_path = BASE_DIR / "cookies.txt"
-    if cookies_path.exists():
-        base_opts["cookiefile"] = str(cookies_path)
+    from config import COOKIES_PATH
+    if COOKIES_PATH and COOKIES_PATH.exists():
+        base_opts["cookiefile"] = str(COOKIES_PATH)
+
+    last_error_str = None
 
     if is_audio:
         audio_formats = [
@@ -297,10 +298,13 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> dict 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     if info:
-                        return info
+                        return info, None
             except Exception as e:
-                logger.warning(f"yt-dlp audio download with '{fmt}' failed: {e}")
-        return None
+                err_msg = str(e)
+                logger.warning(f"yt-dlp audio download with '{fmt}' failed: {err_msg}")
+                if "Sign in to confirm you" in err_msg or "bot" in err_msg.lower():
+                    last_error_str = "bot_detection"
+        return None, last_error_str
     else:
         # Prioritize 720p HD so downloaded video stays within Telegram's 50MB limit
         video_formats = [
@@ -315,25 +319,28 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> dict 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     if info:
-                        return info
+                        return info, None
             except Exception as e:
-                logger.warning(f"yt-dlp video download with '{fmt}' failed: {e}")
-        return None
+                err_msg = str(e)
+                logger.warning(f"yt-dlp video download with '{fmt}' failed: {err_msg}")
+                if "Sign in to confirm you" in err_msg or "bot" in err_msg.lower():
+                    last_error_str = "bot_detection"
+        return None, last_error_str
 
-async def download_with_ytdlp(url: str, platform: str = "general") -> dict | None:
+async def download_with_ytdlp(url: str, platform: str = "general") -> dict:
     """Asynchronous wrapper for fast yt-dlp download"""
     loop = asyncio.get_running_loop()
     file_id = f"{platform}_{uuid.uuid4().hex[:10]}"
     outtmpl = str(DOWNLOAD_DIR / f"{file_id}.%(ext)s")
 
-    info = await loop.run_in_executor(None, _run_ytdlp_download, url, outtmpl, False)
+    info, err = await loop.run_in_executor(None, _run_ytdlp_download, url, outtmpl, False)
     if not info:
-        return None
+        return {"file_path": None, "error": err}
 
     # Find the downloaded file
     files = list(DOWNLOAD_DIR.glob(f"{file_id}.*"))
     if not files:
-        return None
+        return {"file_path": None, "error": err}
 
     downloaded_file = files[0]
     ext = downloaded_file.suffix.lower()
@@ -427,9 +434,9 @@ async def download_youtube_audio(yt_id_or_url: str) -> dict | None:
     file_id = f"ytaudio_{uuid.uuid4().hex[:10]}"
     outtmpl = str(DOWNLOAD_DIR / f"{file_id}.%(ext)s")
 
-    info = await loop.run_in_executor(None, _run_ytdlp_download, url, outtmpl, True)
+    info, err = await loop.run_in_executor(None, _run_ytdlp_download, url, outtmpl, True)
     if not info:
-        return None
+        return {"audio_path": None, "error": err}
 
     # Find the resulting mp3
     expected_path = DOWNLOAD_DIR / f"{file_id}.mp3"
@@ -451,7 +458,7 @@ async def download_youtube_audio(yt_id_or_url: str) -> dict | None:
             "duration": info.get("duration", 0)
         }
 
-    return None
+    return {"audio_path": None, "error": err}
 
 async def download_media(url: str) -> dict | None:
     """Master entry point for downloading media from supported platforms"""

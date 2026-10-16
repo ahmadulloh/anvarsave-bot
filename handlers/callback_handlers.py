@@ -50,7 +50,15 @@ async def cb_download_youtube_track(callback: CallbackQuery, bot: Bot):
     try:
         audio_info = await download_youtube_audio(yt_id)
         if not audio_info or not audio_info.get("audio_path"):
-            await status_msg.edit_text("❌ Kechirasiz, musiqani yuklab bo'lmadi.")
+            err = audio_info.get("error") if audio_info else None
+            if err == "bot_detection":
+                await status_msg.edit_text(
+                    "⚠️ <b>YouTube serveri audio yuklashni chekladi (Bot tekshiruvi).</b>\n\n"
+                    "💡 Render sozlamalariga <code>YOUTUBE_COOKIES</code> (cookies.txt) qo'shilishi lozim.",
+                    parse_mode="HTML"
+                )
+            else:
+                await status_msg.edit_text("❌ Kechirasiz, musiqani yuklab bo'lmadi.")
             return
 
         audio_path = audio_info["audio_path"]

@@ -5,7 +5,13 @@ services:
     dockerfilePath: Dockerfile
     plan: free
     envVars:
-      - key: BOT_TOKEN
+      - key: BOT_TOKEN_1
+        sync: false
+      - key: BOT_TOKEN_2
+        sync: false
+      - key: BOT_TOKEN_3
         sync: false
       - key: BOT_USERNAME
         value: anvarsave_bot
+      - key: YOUTUBE_COOKIES
+        sync: false

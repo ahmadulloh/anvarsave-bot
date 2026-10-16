@@ -27,3 +27,20 @@ DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Max file size Telegram Bot API can send directly (50MB)
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+
+# YouTube Cookies handling (bypasses Render/Cloud datacenter blocks)
+YOUTUBE_COOKIES = os.getenv("YOUTUBE_COOKIES", "").strip()
+LOCAL_COOKIES = BASE_DIR / "cookies.txt"
+RENDER_SECRET_COOKIES = Path("/etc/secrets/cookies.txt")
+
+COOKIES_PATH: Path | None = None
+if RENDER_SECRET_COOKIES.exists():
+    COOKIES_PATH = RENDER_SECRET_COOKIES
+elif LOCAL_COOKIES.exists():
+    COOKIES_PATH = LOCAL_COOKIES
+elif YOUTUBE_COOKIES:
+    try:
+        LOCAL_COOKIES.write_text(YOUTUBE_COOKIES, encoding="utf-8")
+        COOKIES_PATH = LOCAL_COOKIES
+    except Exception:
+        COOKIES_PATH = None

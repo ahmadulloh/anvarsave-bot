@@ -53,10 +53,19 @@ async def handle_text(message: Message, bot: Bot):
         try:
             res = await download_media(url)
             if not res or not res.get("file_path"):
-                await status_msg.edit_text(
-                    "❌ <b>Kechirasiz, videoni yuklab bo'lmadi.</b>\nHavola to'g'riligini yoki video ochiqligini tekshiring.",
-                    parse_mode="HTML"
-                )
+                err = res.get("error") if res else None
+                if err == "bot_detection":
+                    await status_msg.edit_text(
+                        "⚠️ <b>YouTube serveri so'rovni chekladi (Bot himoyasi).</b>\n\n"
+                        "💡 Render/serverda YouTube videolarni yuklash uchun <code>YOUTUBE_COOKIES</code> (cookies.txt) talab qilinadi.\n"
+                        "Instagram va TikTok esa cheklovlarsiz ishlayveradi.",
+                        parse_mode="HTML"
+                    )
+                else:
+                    await status_msg.edit_text(
+                        "❌ <b>Kechirasiz, videoni yuklab bo'lmadi.</b>\nHavola to'g'riligini yoki video ochiqligini tekshiring.",
+                        parse_mode="HTML"
+                    )
                 return
 
             file_path = res["file_path"]
