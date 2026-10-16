@@ -421,44 +421,7 @@ async def get_or_extract_audio(token: str) -> dict | None:
         else:
             media_info["has_audio"] = False
 
-    return None
 
-async def download_youtube_audio(yt_id_or_url: str) -> dict | None:
-    """Download YouTube audio as MP3"""
-    if yt_id_or_url.startswith("http"):
-        url = yt_id_or_url
-    else:
-        url = f"https://www.youtube.com/watch?v={yt_id_or_url}"
-
-    loop = asyncio.get_running_loop()
-    file_id = f"ytaudio_{uuid.uuid4().hex[:10]}"
-    outtmpl = str(DOWNLOAD_DIR / f"{file_id}.%(ext)s")
-
-    info, err = await loop.run_in_executor(None, _run_ytdlp_download, url, outtmpl, True)
-    if not info:
-        return {"audio_path": None, "error": err}
-
-    # Find the resulting mp3
-    expected_path = DOWNLOAD_DIR / f"{file_id}.mp3"
-    if expected_path.exists():
-        return {
-            "audio_path": str(expected_path),
-            "title": info.get("title", "Music"),
-            "artist": info.get("uploader", "") or info.get("channel", ""),
-            "duration": info.get("duration", 0)
-        }
-    
-    # Check any generated file with that id
-    files = list(DOWNLOAD_DIR.glob(f"{file_id}.*"))
-    if files:
-        return {
-            "audio_path": str(files[0]),
-            "title": info.get("title", "Music"),
-            "artist": info.get("uploader", "") or info.get("channel", ""),
-            "duration": info.get("duration", 0)
-        }
-
-    return {"audio_path": None, "error": err}
 
 async def download_media(url: str) -> dict | None:
     """Master entry point for downloading media from supported platforms"""

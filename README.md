@@ -1,33 +1,16 @@
-# 🚀 @anvarsave_bot - Tezkor Media Yuklovchi va Shazam Telegram Boti
+# 🚀 Multi-Bot Tezkor Video Yuklovchi (Instagram, TikTok, YouTube)
 
-Ushbu bot **@SaqlaBot** kabi juda tez ishlovchi, ko'p funksiyali Telegram media saqlovchi va musiqa aniqlovchi (Shazam) bot hisoblanadi.
+Ushbu bot bir vaqtning o'zida bir nechta botlarni parallel ishlatish imkoniyatiga ega bo'lgan, Instagram, TikTok va YouTube tarmoqlaridan videolarni eng yuqori sifatda yuklab beruvchi Telegram bot hisoblanadi.
 
 ---
 
 ## 🌟 Botning Asosiy Imkoniyatlari
 
-### 1. 🎬 Ijtimoiy Tarmoqlardan Video va Media Yuklash
-- **Instagram**: Reels, postlar, IGTV, karusel va rasmlar + barcha videolardan audio/musiqa ajratish;
-- **TikTok**: Suv belgisiz (no watermark) eng yuqori sifatli video + musiqa ajratish;
-- **YouTube**: Videolar va Shorts (audio/video);
-- **Snapchat**: Spotlight va stories videolar;
-- **Likee**: Suv belgisiz videolar;
-- **Pinterest**: Video va yuqori sifatli rasmlar.
-
-Har bir yuklangan video ostida:
-- `📥 @anvarsave_bot orqali yuklab olindi`
-- `[ 📩 Qo'shiqni yuklab olish ]` (tugmani bosganda videodan audioni darhol mp3 qilib tashlab beradi)
-- `[ Guruhga qo'shish ⤴ ]`
-
----
-
-### 2. 🎵 Kuchli Shazam Funksiyasi
-- **Ovozli xabar (voice)** orqali musiqani aniqlash;
-- **Dumaloq video xabar (video note)** orqali musiqani aniqlash;
-- **Video fayl** orqali musiqani aniqlash;
-- **Audio fayl** orqali musiqani aniqlash;
-- **Qo'shiq nomi yoki ijrochi ismi** yozilganda topib berish va MP3 yuklab olish;
-- **Qo'shiq matni (lyrics)** orqali musiqani topish.
+### 🎬 Ijtimoiy Tarmoqlardan Video Yuklash
+- **Instagram**: Reels, postlar va videolar;
+- **TikTok**: Suv belgisiz (no watermark) eng yuqori sifatli video;
+- **YouTube**: Shorts va videolar (720p HD);
+- Har bir yuklangan video ostida uning audiosini alohida yuklab olish imkoniyati.
 
 ---
 
