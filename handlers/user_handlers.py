@@ -6,7 +6,7 @@ from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, FSInputFile
 
-from config import DOWNLOAD_DIR
+from config import DOWNLOAD_DIR, MAX_FILE_SIZE
 from services.downloader import (
     extract_first_url,
     download_media,
@@ -60,6 +60,15 @@ async def handle_text(message: Message, bot: Bot):
                 return
 
             file_path = res["file_path"]
+            file_size = Path(file_path).stat().st_size
+            if file_size > MAX_FILE_SIZE:
+                await status_msg.edit_text(
+                    f"⚠️ <b>Video hajmi juda katta ({round(file_size / (1024 * 1024), 1)} MB).</b>\n"
+                    "Telegram Bot orqali faqat 50 MB gacha bo'lgan videolarni yuborish mumkin.",
+                    parse_mode="HTML"
+                )
+                return
+
             title = res.get("title", "")
             author = res.get("author", "")
             media_type = res.get("media_type", "video")

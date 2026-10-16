@@ -249,51 +249,75 @@ async def download_instagram(url: str) -> dict | None:
 
     return await download_with_ytdlp(url, platform="instagram")
 
+def get_ffmpeg_path() -> str | None:
+    """Find valid ffmpeg executable location"""
+    try:
+        import static_ffmpeg
+        static_ffmpeg.add_paths()
+    except Exception:
+        pass
+    import shutil
+    return shutil.which("ffmpeg")
+
 # ================= GENERAL YT-DLP DOWNLOADER =================
 def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> dict | None:
-    """Synchronous yt-dlp worker optimized for fast execution"""
+    """Synchronous yt-dlp worker with robust formats and ffmpeg integration"""
+    ffmpeg_bin = get_ffmpeg_path()
+
+    base_opts = {
+        "outtmpl": outtmpl,
+        "quiet": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "socket_timeout": 30,
+        "nocheckcertificate": True,
+    }
+    if ffmpeg_bin:
+        base_opts["ffmpeg_location"] = ffmpeg_bin
+
+    from config import BASE_DIR
+    cookies_path = BASE_DIR / "cookies.txt"
+    if cookies_path.exists():
+        base_opts["cookiefile"] = str(cookies_path)
+
     if is_audio:
-        ydl_opts = {
-            "format": "bestaudio/best",
-            "outtmpl": outtmpl,
-            "quiet": True,
-            "no_warnings": True,
-            "noplaylist": True,
-            "postprocessors": [{
+        audio_formats = [
+            "bestaudio/best",
+            "ba/b",
+        ]
+        for fmt in audio_formats:
+            ydl_opts = dict(base_opts)
+            ydl_opts["format"] = fmt
+            ydl_opts["postprocessors"] = [{
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "mp3",
                 "preferredquality": "192",
-            }],
-            "extractor_args": {
-                "youtube": {"player_client": ["android", "ios", "web"]}
-            },
-            "concurrent_fragment_downloads": 4,
-            "buffersize": 1024 * 64,
-            "max_filesize": MAX_FILE_SIZE,
-            "socket_timeout": 30,
-        }
+            }]
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    if info:
+                        return info
+            except Exception as e:
+                logger.warning(f"yt-dlp audio download with '{fmt}' failed: {e}")
+        return None
     else:
-        ydl_opts = {
-            "format": "bestvideo[ext=mp4][filesize<=45M]+bestaudio[ext=m4a]/best[ext=mp4][filesize<=45M]/best[filesize<=45M]/best",
-            "outtmpl": outtmpl,
-            "quiet": True,
-            "no_warnings": True,
-            "noplaylist": True,
-            "extractor_args": {
-                "youtube": {"player_client": ["android", "ios", "web"]}
-            },
-            "concurrent_fragment_downloads": 4,
-            "buffersize": 1024 * 64,
-            "max_filesize": MAX_FILE_SIZE,
-            "socket_timeout": 30,
-        }
-
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            return info
-    except Exception as e:
-        logger.error(f"yt-dlp download failed: {e}")
+        # Prioritize 720p HD so downloaded video stays within Telegram's 50MB limit
+        video_formats = [
+            "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best[height<=720]/best",
+            "bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480]/best",
+            "best[filesize<=48M]/best",
+        ]
+        for fmt in video_formats:
+            ydl_opts = dict(base_opts)
+            ydl_opts["format"] = fmt
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    if info:
+                        return info
+            except Exception as e:
+                logger.warning(f"yt-dlp video download with '{fmt}' failed: {e}")
         return None
 
 async def download_with_ytdlp(url: str, platform: str = "general") -> dict | None:
