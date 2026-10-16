@@ -39,14 +39,45 @@ YOUTUBE_COOKIES = os.getenv("YOUTUBE_COOKIES", "").strip()
 LOCAL_COOKIES = BASE_DIR / "cookies.txt"
 RENDER_SECRET_COOKIES = Path("/etc/secrets/cookies.txt")
 
-COOKIES_PATH: Path | None = None
-if RENDER_SECRET_COOKIES.exists():
-    COOKIES_PATH = RENDER_SECRET_COOKIES
-elif LOCAL_COOKIES.exists():
-    COOKIES_PATH = LOCAL_COOKIES
-elif YOUTUBE_COOKIES:
-    try:
-        LOCAL_COOKIES.write_text(YOUTUBE_COOKIES, encoding="utf-8")
-        COOKIES_PATH = LOCAL_COOKIES
-    except Exception:
-        COOKIES_PATH = None
+def get_valid_cookies_path() -> Path | None:
+    """Validate and normalize cookie file format so yt-dlp never crashes on malformed cookies"""
+    header = "# Netscape HTTP Cookie File"
+    
+    # 1. Render secret file
+    if RENDER_SECRET_COOKIES.exists():
+        try:
+            content = RENDER_SECRET_COOKIES.read_text(encoding="utf-8", errors="ignore")
+            if "youtube.com" in content.lower():
+                if header.lower() not in content.lower():
+                    LOCAL_COOKIES.write_text(f"{header}\n{content}", encoding="utf-8")
+                    return LOCAL_COOKIES
+                return RENDER_SECRET_COOKIES
+        except Exception:
+            pass
+
+    # 2. YOUTUBE_COOKIES environment variable
+    if YOUTUBE_COOKIES and "youtube.com" in YOUTUBE_COOKIES.lower():
+        try:
+            content = YOUTUBE_COOKIES.strip()
+            if header.lower() not in content.lower():
+                content = f"{header}\n{content}"
+            LOCAL_COOKIES.write_text(content, encoding="utf-8")
+            return LOCAL_COOKIES
+        except Exception:
+            pass
+
+    # 3. Local cookies.txt file
+    if LOCAL_COOKIES.exists():
+        try:
+            content = LOCAL_COOKIES.read_text(encoding="utf-8", errors="ignore")
+            if "youtube.com" in content.lower():
+                if header.lower() not in content.lower():
+                    LOCAL_COOKIES.write_text(f"{header}\n{content}", encoding="utf-8")
+                return LOCAL_COOKIES
+        except Exception:
+            pass
+
+    return None
+
+COOKIES_PATH: Path | None = get_valid_cookies_path()
+
