@@ -1,54 +1,71 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from config import BOT_USERNAME
+from utils.bot_profiles import BotProfile, PROFILES
 
-def get_start_keyboard() -> InlineKeyboardMarkup:
-    """Start message inline keyboard"""
+def get_start_keyboard(profile: BotProfile | None = None, bot_username: str = "bot") -> InlineKeyboardMarkup:
+    """Start message inline keyboard with dynamic text and link per bot"""
+    p = profile or PROFILES[0]
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="➕ Guruhga qo'shish ⤴",
-                    url=f"https://t.me/{BOT_USERNAME}?startgroup=true"
+                    text=p.group_button_text,
+                    url=f"https://t.me/{bot_username}?startgroup=true"
                 )
             ]
         ]
     )
     return keyboard
 
-def get_video_keyboard(media_token: str) -> InlineKeyboardMarkup:
-    """Keyboard attached below every downloaded video"""
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="📩 Qo'shiqni yuklab olish",
-                    callback_data=f"audio:{media_token}"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Guruhga qo'shish ⤴",
-                    url=f"https://t.me/{BOT_USERNAME}?startgroup=true"
-                )
-            ]
-        ]
-    )
-    return keyboard
+def get_video_keyboard(
+    media_token: str,
+    profile: BotProfile | None = None,
+    bot_username: str = "bot",
+    has_audio: bool = True
+) -> InlineKeyboardMarkup:
+    """
+    Keyboard attached below downloaded video.
+    If video has audio, presents distinct audio extraction button.
+    If video does not have audio, shows only group button.
+    """
+    p = profile or PROFILES[0]
+    buttons = []
 
-def get_shazam_keyboard(yt_id: str | None = None) -> InlineKeyboardMarkup:
-    """Keyboard for recognized Shazam song"""
+    if has_audio:
+        buttons.append([
+            InlineKeyboardButton(
+                text=p.music_button_text,
+                callback_data=f"audio:{media_token}"
+            )
+        ])
+
+    buttons.append([
+        InlineKeyboardButton(
+            text=p.group_button_text,
+            url=f"https://t.me/{bot_username}?startgroup=true"
+        )
+    ])
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_shazam_keyboard(
+    yt_id: str | None = None,
+    profile: BotProfile | None = None,
+    bot_username: str = "bot"
+) -> InlineKeyboardMarkup:
+    """Keyboard for recognized Shazam song with dynamic profile buttons"""
+    p = profile or PROFILES[0]
     buttons = []
     if yt_id:
         buttons.append([
             InlineKeyboardButton(
-                text="📥 Qo'shiqni yuklab olish (MP3)",
+                text=p.shazam_dl_button_text,
                 callback_data=f"yt_dl:{yt_id}"
             )
         ])
     buttons.append([
         InlineKeyboardButton(
-            text="Guruhga qo'shish ⤴",
-            url=f"https://t.me/{BOT_USERNAME}?startgroup=true"
+            text=p.group_button_text,
+            url=f"https://t.me/{bot_username}?startgroup=true"
         )
     ])
     return InlineKeyboardMarkup(inline_keyboard=buttons)

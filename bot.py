@@ -8,17 +8,18 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
-from config import BOT_TOKEN
+from config import BOT_TOKENS
 from handlers.user_handlers import user_router
 from handlers.callback_handlers import callback_router
-from services.downloader import cleanup_old_files
+from services.downloader import cleanup_old_files, close_http_session
+from utils.bot_profiles import register_bot_profile, PROFILES
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
-logger = logging.getLogger("anvarsave_bot")
+logger = logging.getLogger("multi_save_bot")
 
 async def periodic_cleanup():
     """Periodically remove downloaded files older than 15 minutes"""
@@ -32,10 +33,14 @@ async def periodic_cleanup():
         except Exception as e:
             logger.error(f"Error in cleanup loop: {e}")
 
-async def start_web_server():
-    """Lightweight health check web server to keep bot alive on Render/Koyeb Free Tier"""
+async def start_web_server(active_bot_names: list[str]):
+    """Lightweight health check web server to keep bots alive on Render/Koyeb Free Tier"""
     async def handle_ping(request):
-        return web.Response(text="Bot @anvarsave_bot is active and running 24/7!", status=200)
+        bots_str = ", ".join(f"@{name}" for name in active_bot_names)
+        return web.Response(
+            text=f"Active Bots ({len(active_bot_names)}): {bots_str} running 24/7!",
+            status=200
+        )
 
     app = web.Application()
     app.router.add_get("/", handle_ping)
@@ -50,40 +55,64 @@ async def start_web_server():
     return runner
 
 async def main():
-    if not BOT_TOKEN:
-        logger.error("BOT_TOKEN is not defined in config or .env!")
+    if not BOT_TOKENS:
+        logger.error("Hech qanday BOT_TOKEN topilmadi! .env faylini tekshiring.")
         sys.exit(1)
 
-    bot = Bot(
-        token=BOT_TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-    )
     dp = Dispatcher()
 
-    # Register routers
+    # Register routers (shared by all bots)
     dp.include_router(callback_router)
     dp.include_router(user_router)
 
-    # Start health check server for free hosting
-    web_runner = await start_web_server()
+    valid_bots: list[Bot] = []
+    bot_names: list[str] = []
+
+    # Initialize each configured bot
+    for idx, token in enumerate(BOT_TOKENS):
+        bot = Bot(
+            token=token,
+            default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        )
+        try:
+            await bot.delete_webhook(drop_pending_updates=True)
+            me = await bot.get_me()
+            profile = PROFILES[idx % len(PROFILES)]
+            register_bot_profile(token, idx, bot_id=me.id, username=me.username)
+            valid_bots.append(bot)
+            bot_names.append(me.username)
+            logger.info(
+                f"✅ Bot #{idx + 1} muvaffaqiyatli ulandi: @{me.username} (Profil: '{profile.name}')"
+            )
+        except Exception as e:
+            logger.error(f"❌ Bot #{idx + 1} tokeni bilan ulanishda xatolik: {e}")
+            await bot.session.close()
+
+    if not valid_bots:
+        logger.error("Birorta ham bot muvaffaqiyatli ishga tushmadi!")
+        sys.exit(1)
+
+    logger.info(f"Jami {len(valid_bots)} ta bot bir vaqtda parallel ishga tushirilmoqda...")
+
+    # Start health check server
+    web_runner = await start_web_server(bot_names)
 
     # Start periodic file cleanup task
     cleanup_task = asyncio.create_task(periodic_cleanup())
 
-    # Drop pending updates to avoid backlog on startup
-    await bot.delete_webhook(drop_pending_updates=True)
-    me = await bot.get_me()
-    logger.info(f"Bot @{me.username} successfully started!")
-
     try:
-        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        # Start concurrent polling for all valid bot instances
+        await dp.start_polling(*valid_bots, allowed_updates=dp.resolve_used_update_types())
     finally:
         cleanup_task.cancel()
         await web_runner.cleanup()
-        await bot.session.close()
+        await close_http_session()
+        for b in valid_bots:
+            await b.session.close()
+        logger.info("Barcha botlar to'xtatildi.")
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        logger.info("Bot stopped.")
+        logger.info("Botlar to'xtatildi.")
