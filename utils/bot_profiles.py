@@ -149,54 +149,55 @@ PROFILES = [
         group_button_text="🌐 Guruhga qo'shish 💎"
     ),
 
-    # Bot 5: Media Master Pro (Professional Media)
+    # Bot 5: Siadmx Yuklovchi
     BotProfile(
         id=5,
-        name="Media Master Pro",
+        name="Siadmx Yuklovchi",
         start_text_template=(
-            "🎬 <b>Xush kelibsiz! @{bot_username} — Professional video yuklovchi.</b>\n\n"
-            "Quyidagi tarmoqlardan videolarni eng yuqori sifatda yuklab oling:\n\n"
-            "— <b>Instagram</b> (Reels, Postlar va videolar)\n"
-            "— <b>TikTok</b> (Suv belgisiz toza video)\n"
-            "— <b>YouTube</b> (Shorts va videolar)\n\n"
-            "✨ <i>Istalgan video havolasini yuboring:</i>"
+            "⚡️ <b>Assalomu alaykum! @{bot_username} xizmatingizda.</b>\n\n"
+            "Ijtimoiy tarmoqlardagi videolarni eng yuqori sifatda va tezkor saqlab oling:\n\n"
+            "🔥 <b>Instagram</b> — Reels, postlar va videolar\n"
+            "🔥 <b>TikTok</b> — Suv belgisiz toza sifat\n"
+            "🔥 <b>YouTube</b> — Shorts va to'liq videolar\n\n"
+            "🚀 <i>Yuklash uchun video havolasini yuboring!</i>"
         ),
         help_text_template=(
-            "🎬 <b>Foydalanish tartibi:</b>\n\n"
+            "⚡️ <b>Foydalanish bo'yicha ko'rsatma:</b>\n\n"
             "1️⃣ Video ssilkasini yuboring (Instagram, TikTok, YouTube).\n"
-            "2️⃣ Videoni qabul qiling va tomosha qiling!\n"
-            "3️⃣ Videodan audio ajratish uchun '🎧 Musiqani ko'chirish' tugmasini bosing."
+            "2️⃣ Videoni bir zumda qabul qiling!\n"
+            "3️⃣ Musiqa kerak bo'lsa, '🎵 Musiqasini yuklash' tugmasini bosing."
         ),
-        loading_text="🛰 <b>Tayyorlanmoqda, kuting...</b>",
-        video_caption_template="🎬 <b>@{bot_username}</b> | Yuqori sifatda",
-        audio_caption_template="🎧 <b>{title}</b>\n💎 @{bot_username}",
-        music_button_text="🎧 Musiqani ko'chirish",
-        group_button_text="🌐 Guruhga qo'shish ↗️"
+        loading_text="⚡️ <b>Tezkor yuklanmoqda...</b>",
+        video_caption_template="📥 <b>@{bot_username}</b> orqali yuklandi",
+        audio_caption_template="🎧 <b>{title}</b>\n⚡️ @{bot_username}",
+        music_button_text="🎵 Musiqasini yuklash",
+        group_button_text="➕ Guruhga qo'shish 🚀"
     ),
 
-    # Bot 6: Super Fast Saver (Minimalist & Oson)
+    # Bot 6: Axmadullo Saqla Bot
     BotProfile(
         id=6,
-        name="Super Fast Saver",
+        name="Axmadullo Saqla Bot",
         start_text_template=(
-            "🚀 <b>Salom! @{bot_username} xizmatingizda.</b>\n\n"
-            "Har qanday video havolasini yuboring — bot bir zumda yuklab beradi:\n\n"
-            "• <b>TikTok</b> (Suv belgisiz)\n"
-            "• <b>Instagram</b> (Reels & postlar)\n"
-            "• <b>YouTube</b> (Shorts & videolar)\n\n"
-            "Boshlash uchun video havolasini yuboring 👇"
+            "🌟 <b>Salom! @{bot_username} ga xush kelibsiz!</b>\n\n"
+            "Videolarni tez, qulay va original tiniq sifatda saqlab oling:\n\n"
+            "✨ <b>Instagram</b> — Reels, videolar va stories\n"
+            "✨ <b>TikTok</b> — Suv belgisiz original HD\n"
+            "✨ <b>YouTube</b> — Shorts va to'liq videolar\n\n"
+            "📌 <i>Boshlash uchun video ssilkasini yuboring!</i>\n"
+            "👥 <b>Guruhlarga qo'shib, birga foydalaning!</b>"
         ),
         help_text_template=(
-            "🚀 <b>Yordam:</b>\n\n"
+            "🌟 <b>Yo'riqnoma:</b>\n\n"
             "• Video havolasini botga tashlang.\n"
             "• Bot darhol videoni yuklab beradi.\n"
-            "• Audiosini olish uchun '🎵 Audio yuklab olish' tugmasini bosing."
+            "• Audiosini olish uchun '🎧 Audio trekni olish' tugmasini bosing."
         ),
-        loading_text="🚀 <b>Yuklanmoqda...</b>",
-        video_caption_template="🚀 <b>@{bot_username}</b>",
-        audio_caption_template="🎵 <b>{title}</b>\n🚀 @{bot_username}",
-        music_button_text="🎵 Audio yuklab olish",
-        group_button_text="➕ Guruhga qo'shish 🚀"
+        loading_text="🌟 <b>Tayyorlanmoqda, kuting...</b>",
+        video_caption_template="🌟 <b>@{bot_username}</b> bilan saqlandi",
+        audio_caption_template="🎵 <b>{title}</b>\n🌟 @{bot_username}",
+        music_button_text="🎧 Audio trekni olish",
+        group_button_text="👥 Guruhga qo'shish 🌟"
     ),
 ]
 
@@ -217,9 +218,9 @@ def register_bot_profile(bot_token: str, profile_index: int, bot_id: int | None 
             idx = 2
         elif "muborak" in u:
             idx = 3
-        elif "media" in u or "pro" in u:
+        elif "siadmx" in u or "yukla" in u:
             idx = 4
-        elif "super" in u or "fast" in u:
+        elif "axmadullo" in u or "saqla" in u:
             idx = 5
 
     profile = PROFILES[idx]

@@ -19,8 +19,8 @@ BOT_TOKEN_1 = os.getenv("BOT_TOKEN_1", os.getenv("BOT_TOKEN", "8719226279:AAH3nW
 BOT_TOKEN_2 = os.getenv("BOT_TOKEN_2", "8637593283:AAFMVWWWytrcJKeXQhlXkiABU3EIt98XWyM").strip()
 BOT_TOKEN_3 = os.getenv("BOT_TOKEN_3", "8862237272:AAESTK-s1T0iD7wHXFAqmCwbnhUPpG_ukbc").strip()
 BOT_TOKEN_4 = os.getenv("BOT_TOKEN_4", "8805792544:AAGizRwhlgKD4uIL31P5EQHBcocnr4nkK_g").strip()
-BOT_TOKEN_5 = os.getenv("BOT_TOKEN_5", "").strip()
-BOT_TOKEN_6 = os.getenv("BOT_TOKEN_6", "").strip()
+BOT_TOKEN_5 = os.getenv("BOT_TOKEN_5", "8952615352:AAG--Vu1K_TAykDktccILUeu5DyIO_e9w3A").strip()
+BOT_TOKEN_6 = os.getenv("BOT_TOKEN_6", "8772058851:AAHGqrbrIrcVa7Pj6XT_d0SAg3IAQQFe6uA").strip()
 
 # Collect all configured tokens in order, strictly ensuring no duplicates
 seen_tokens = set()
