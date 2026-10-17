@@ -2,12 +2,14 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Initialize static_ffmpeg so ffmpeg and ffprobe are in PATH automatically on Windows/Linux
+import shutil
 try:
-    import static_ffmpeg
-    static_ffmpeg.add_paths()
+    if not shutil.which("ffmpeg"):
+        import static_ffmpeg
+        static_ffmpeg.add_paths()
 except Exception:
     pass
+
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")

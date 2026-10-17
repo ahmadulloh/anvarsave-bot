@@ -13,11 +13,14 @@ from urllib.parse import quote
 import aiohttp
 import yt_dlp
 
+import shutil
 try:
-    import static_ffmpeg
-    static_ffmpeg.add_paths()
+    if not shutil.which("ffmpeg"):
+        import static_ffmpeg
+        static_ffmpeg.add_paths()
 except Exception:
     pass
+
 
 from config import DOWNLOAD_DIR, MAX_FILE_SIZE
 
@@ -303,13 +306,17 @@ async def download_instagram(url: str) -> dict | None:
 
 def get_ffmpeg_path() -> str | None:
     """Find valid ffmpeg executable location"""
+    import shutil
+    bin_path = shutil.which("ffmpeg")
+    if bin_path:
+        return bin_path
     try:
         import static_ffmpeg
         static_ffmpeg.add_paths()
     except Exception:
         pass
-    import shutil
     return shutil.which("ffmpeg")
+
 
 # ================= GENERAL YT-DLP DOWNLOADER =================
 def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple[dict | None, str | None]:

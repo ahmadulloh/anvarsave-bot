@@ -2,6 +2,11 @@ import sys
 import paramiko
 import time
 
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 VPS_IP = "77.83.206.138"
 VPS_USER = "root"
 
