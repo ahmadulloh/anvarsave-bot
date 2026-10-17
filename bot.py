@@ -55,6 +55,16 @@ async def start_web_server(active_bot_names: list[str]):
     return runner
 
 async def main():
+    if os.getenv("RENDER"):
+        logger.warning("⚠️ RENDER muhiti aniqlandi. Ushbu botlar to'liq Eskiz VPS (77.83.206.138) serveriga ko'chirilgan!")
+        logger.warning("TelegramConflictError bo'lmasligi uchun Render-da Telegram polling o'chirildi. Render faqat veb-server rejimida ishlaydi.")
+        web_runner = await start_web_server(["Eskiz_VPS_ga_ko'chirilgan_77.83.206.138"])
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await web_runner.cleanup()
+        return
+
     if not BOT_TOKENS:
         logger.error("Hech qanday BOT_TOKEN topilmadi! .env faylini tekshiring.")
         sys.exit(1)
