@@ -199,6 +199,32 @@ PROFILES = [
         music_button_text="🎧 Audio trekni olish",
         group_button_text="👥 Guruhga qo'shish 🌟"
     ),
+
+    # Bot 7: Nasiba Save (Yumshoq & Go'zal uslub)
+    BotProfile(
+        id=7,
+        name="Nasiba Save",
+        start_text_template=(
+            "🌺 <b>Salom! @{bot_username} ga xush kelibsiz.</b>\n\n"
+            "Ijtimoiy tarmoqlardagi videolarni tez va sifatli formatda saqlab oling:\n\n"
+            "🌷 <b>Instagram</b> — Reels, postlar va videolar\n"
+            "🌷 <b>TikTok</b> — Suv belgisiz original HD\n"
+            "🌷 <b>YouTube</b> — Shorts va to'liq formatdagi videolar\n\n"
+            "💖 <i>Videoni yuklash uchun shunchaki havolasini yuboring!</i>\n"
+            "🌺 <b>Guruhlarga ham qo'shishingiz mumkin!</b>"
+        ),
+        help_text_template=(
+            "🌺 <b>Foydalanish tartibi:</b>\n\n"
+            "• Video havolasini botga yuboring (Instagram, TikTok yoki YouTube).\n"
+            "• Bot bir necha soniyada videoni tayyorlab beradi.\n"
+            "• Qo'shig'ini olish uchun '🎧 Qo'shig'ini yuklash' tugmasini bosing."
+        ),
+        loading_text="🌺 <b>Yuklanmoqda, iltimos kuting...</b>",
+        video_caption_template="💖 <b>@{bot_username}</b> orqali saqlandi",
+        audio_caption_template="🎶 <b>{title}</b>\n💖 @{bot_username}",
+        music_button_text="🎧 Qo'shig'ini yuklash",
+        group_button_text="🌺 Guruhga qo'shish ✨"
+    ),
 ]
 
 _TOKEN_PROFILE_MAP: Dict[str, BotProfile] = {}
@@ -222,6 +248,8 @@ def register_bot_profile(bot_token: str, profile_index: int, bot_id: int | None 
             idx = 4
         elif "axmadullo" in u or "saqla" in u:
             idx = 5
+        elif "nasiba" in u:
+            idx = 6
 
     profile = PROFILES[idx]
     _TOKEN_PROFILE_MAP[bot_token] = profile

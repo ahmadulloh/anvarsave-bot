@@ -14,18 +14,22 @@ except Exception:
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
-# Support up to 6 bot tokens (with fallback for user's configured bots)
+# Support multiple bot tokens (with fallback for user's configured bots)
 BOT_TOKEN_1 = os.getenv("BOT_TOKEN_1", os.getenv("BOT_TOKEN", "8719226279:AAH3nWRh3-G1a3Gx2drYhhMrRqVH_gDGEag")).strip()
 BOT_TOKEN_2 = os.getenv("BOT_TOKEN_2", "8637593283:AAFMVWWWytrcJKeXQhlXkiABU3EIt98XWyM").strip()
 BOT_TOKEN_3 = os.getenv("BOT_TOKEN_3", "8862237272:AAESTK-s1T0iD7wHXFAqmCwbnhUPpG_ukbc").strip()
 BOT_TOKEN_4 = os.getenv("BOT_TOKEN_4", "8805792544:AAGizRwhlgKD4uIL31P5EQHBcocnr4nkK_g").strip()
 BOT_TOKEN_5 = os.getenv("BOT_TOKEN_5", "8952615352:AAG--Vu1K_TAykDktccILUeu5DyIO_e9w3A").strip()
 BOT_TOKEN_6 = os.getenv("BOT_TOKEN_6", "8772058851:AAHGqrbrIrcVa7Pj6XT_d0SAg3IAQQFe6uA").strip()
+BOT_TOKEN_7 = os.getenv("BOT_TOKEN_7", "8802016873:AAHKzveVxJNzhq3q5KmW9abE50xzLPFIDb0").strip()
+BOT_TOKEN_8 = os.getenv("BOT_TOKEN_8", "").strip()
+BOT_TOKEN_9 = os.getenv("BOT_TOKEN_9", "").strip()
+BOT_TOKEN_10 = os.getenv("BOT_TOKEN_10", "").strip()
 
 # Collect all configured tokens in order, strictly ensuring no duplicates
 seen_tokens = set()
 BOT_TOKENS = []
-for t in [BOT_TOKEN_1, BOT_TOKEN_2, BOT_TOKEN_3, BOT_TOKEN_4, BOT_TOKEN_5, BOT_TOKEN_6]:
+for t in [BOT_TOKEN_1, BOT_TOKEN_2, BOT_TOKEN_3, BOT_TOKEN_4, BOT_TOKEN_5, BOT_TOKEN_6, BOT_TOKEN_7, BOT_TOKEN_8, BOT_TOKEN_9, BOT_TOKEN_10]:
     if t and t not in seen_tokens:
         seen_tokens.add(t)
         BOT_TOKENS.append(t)
