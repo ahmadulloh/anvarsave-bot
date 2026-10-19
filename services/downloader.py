@@ -92,7 +92,7 @@ async def get_youtube_preview_info(video_id: str) -> dict:
 
     try:
         session = await get_http_session()
-        async with session.get(oembed_url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+        async with session.get(oembed_url, timeout=aiohttp.ClientTimeout(total=3)) as resp:
             if resp.status == 200:
                 data = await resp.json()
                 title = data.get("title") or title
@@ -328,15 +328,12 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
-        "socket_timeout": 30,
+        "socket_timeout": 15,
         "nocheckcertificate": True,
         "geo_bypass": True,
         "geo_bypass_country": "US",
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["android", "ios", "web_creator", "mweb"]
-            }
-        }
+        "remote_components": ["ejs:github"],
+        "concurrent_fragment_downloads": 4,
     }
     if ffmpeg_bin:
         base_opts["ffmpeg_location"] = ffmpeg_bin
@@ -350,7 +347,6 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple
     if is_audio:
         audio_formats = [
             "ba[ext=m4a]/ba/best",
-            "140/ba/b",
             "bestaudio/best",
         ]
         for fmt in audio_formats:
@@ -375,10 +371,9 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple
         return None, last_error_str
     else:
         video_formats = [
-            "bv*[ext=mp4][height<=1080]+ba[ext=m4a]/bv*[height<=1080]+ba/b[ext=mp4]/best",
-            "bv*[height<=720]+ba/b",
-            "22/18/best[height<=720][ext=mp4]/best[height<=720]/best",
-            "best[filesize<=48M]/best",
+            "bv*[ext=mp4][height<=720]+ba[ext=m4a]/bv*[height<=720]+ba/b[ext=mp4]/best",
+            "bv*[ext=mp4][height<=1080]+ba[ext=m4a]/bv*[height<=1080]+ba/best",
+            "b[ext=mp4]/best",
         ]
         for fmt in video_formats:
             ydl_opts = dict(base_opts)
@@ -453,15 +448,12 @@ def _run_youtube_download_sync(video_id: str, is_audio: bool = False) -> tuple[d
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
-        "socket_timeout": 30,
+        "socket_timeout": 15,
         "nocheckcertificate": True,
         "geo_bypass": True,
         "geo_bypass_country": "US",
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["android", "ios", "web_creator", "mweb"]
-            }
-        }
+        "remote_components": ["ejs:github"],
+        "concurrent_fragment_downloads": 4,
     }
     if ffmpeg_bin:
         base_opts["ffmpeg_location"] = ffmpeg_bin
@@ -476,7 +468,6 @@ def _run_youtube_download_sync(video_id: str, is_audio: bool = False) -> tuple[d
         # Download audio stream or progressive format and convert to mp3
         audio_formats = [
             "ba[ext=m4a]/ba/best",
-            "140/ba/b",
             "bestaudio/best",
         ]
         for fmt in audio_formats:
@@ -518,10 +509,9 @@ def _run_youtube_download_sync(video_id: str, is_audio: bool = False) -> tuple[d
     else:
         # Download video: high speed adaptive or progressive stream
         video_formats = [
-            "bv*[ext=mp4][height<=1080]+ba[ext=m4a]/bv*[height<=1080]+ba/b[ext=mp4]/best",
-            "bv*[height<=720]+ba/b",
-            "22/18/best[height<=720][ext=mp4]/best[height<=720]/best",
-            "best[filesize<=48M]/best",
+            "bv*[ext=mp4][height<=720]+ba[ext=m4a]/bv*[height<=720]+ba/b[ext=mp4]/best",
+            "bv*[ext=mp4][height<=1080]+ba[ext=m4a]/bv*[height<=1080]+ba/best",
+            "b[ext=mp4]/best",
         ]
         for fmt in video_formats:
             ydl_opts = dict(base_opts)
