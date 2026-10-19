@@ -12,7 +12,7 @@ from config import BOT_TOKENS
 from handlers.user_handlers import user_router
 from handlers.callback_handlers import callback_router
 from services.downloader import cleanup_old_files, close_http_session
-from utils.bot_profiles import register_bot_profile, PROFILES
+from utils.bot_profiles import register_bot_profile, get_bot_profile, PROFILES
 
 logging.basicConfig(
     level=logging.INFO,
