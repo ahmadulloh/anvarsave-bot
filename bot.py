@@ -97,8 +97,8 @@ async def main():
                 continue
 
             seen_bot_ids.add(me.id)
-            profile = PROFILES[len(valid_bots) % len(PROFILES)]
             register_bot_profile(token, len(valid_bots), bot_id=me.id, username=me.username)
+            profile = get_bot_profile(bot)
             valid_bots.append(bot)
             bot_names.append(me.username)
             logger.info(

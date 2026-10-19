@@ -19,6 +19,10 @@ class BotProfile:
     audio_caption_template: str
     music_button_text: str
     group_button_text: str
+    yt_format_text: str = "\n\nYuklab olish formatlari ↓"
+    yt_video_btn: str = "📦 Video"
+    yt_audio_btn: str = "🎧 Audio"
+    direct_youtube_download: bool = False
 
     def format_start(self, username: str) -> str:
         return self.start_text_template.format(bot_username=username)
@@ -69,7 +73,11 @@ PROFILES = [
         video_caption_template="📥 <b>@{bot_username}</b> orqali yuklab olindi",
         audio_caption_template="🎵 <b>{title}</b>\n📥 @{bot_username} orqali yuklab olindi",
         music_button_text="📩 Qo'shiqni yuklab olish",
-        group_button_text="➕ Guruhga qo'shish ⤴"
+        group_button_text="➕ Guruhga qo'shish ⤴",
+        yt_format_text="\n\nYuklab olish formatlari ↓",
+        yt_video_btn="📦 Video",
+        yt_audio_btn="🎧 Audio",
+        direct_youtube_download=False
     ),
 
     # Bot 2: Maftuna Save Bot (Nafis & Chiroyli)
@@ -95,7 +103,11 @@ PROFILES = [
         video_caption_template="🎀 <b>@{bot_username}</b> orqali saqlandi",
         audio_caption_template="🎶 <b>{title}</b>\n🎀 @{bot_username}",
         music_button_text="🎧 Musiqasini yuklash",
-        group_button_text="🌸 Guruhga qo'shish ✨"
+        group_button_text="🌸 Guruhga qo'shish ✨",
+        yt_format_text="\n\n🌸 Kerakli formatni tanlang:",
+        yt_video_btn="🎬 Video (MP4)",
+        yt_audio_btn="🎶 Audio (MP3)",
+        direct_youtube_download=False
     ),
 
     # Bot 3: Zeboxon Downloader (Ultra Tezkor & Energetik)
@@ -121,7 +133,11 @@ PROFILES = [
         video_caption_template="⚡️ <b>@{bot_username}</b> bilan yuklandi",
         audio_caption_template="🎶 <b>{title}</b>\n⚡️ @{bot_username}",
         music_button_text="🎵 Musiqasini olish (MP3)",
-        group_button_text="🚀 Guruhga ulash ⚡️"
+        group_button_text="🚀 Guruhga ulash ⚡️",
+        yt_format_text="\n\n⚡️ Qaysi formatda yuklansin?",
+        yt_video_btn="⚡️ Video yuklash",
+        yt_audio_btn="🎵 Audio yuklash",
+        direct_youtube_download=False
     ),
 
     # Bot 4: Muborakxon Save (Premium & Elegant)
@@ -146,7 +162,11 @@ PROFILES = [
         video_caption_template="💎 <b>@{bot_username}</b> | Premium Saver",
         audio_caption_template="💎 <b>{title}</b>\n💎 @{bot_username}",
         music_button_text="🎶 Trekni ko'chirish",
-        group_button_text="🌐 Guruhga qo'shish 💎"
+        group_button_text="🌐 Guruhga qo'shish 💎",
+        yt_format_text="\n\n💎 Formatni tanlang (Video / Audio):",
+        yt_video_btn="💎 Video (HD)",
+        yt_audio_btn="💎 Audio trek",
+        direct_youtube_download=False
     ),
 
     # Bot 5: Siadmx Yuklovchi
@@ -171,7 +191,11 @@ PROFILES = [
         video_caption_template="📥 <b>@{bot_username}</b> orqali yuklandi",
         audio_caption_template="🎧 <b>{title}</b>\n⚡️ @{bot_username}",
         music_button_text="🎵 Musiqasini yuklash",
-        group_button_text="➕ Guruhga qo'shish 🚀"
+        group_button_text="➕ Guruhga qo'shish 🚀",
+        yt_format_text="\n\n🔥 Yuklash turini belgilang:",
+        yt_video_btn="🎥 Video yuklash",
+        yt_audio_btn="🎧 Audio olish",
+        direct_youtube_download=False
     ),
 
     # Bot 6: Axmadullo Saqla Bot
@@ -197,7 +221,11 @@ PROFILES = [
         video_caption_template="🌟 <b>@{bot_username}</b> bilan saqlandi",
         audio_caption_template="🎵 <b>{title}</b>\n🌟 @{bot_username}",
         music_button_text="🎧 Audio trekni olish",
-        group_button_text="👥 Guruhga qo'shish 🌟"
+        group_button_text="👥 Guruhga qo'shish 🌟",
+        yt_format_text="\n\n🌟 Kerakli bo'limni tanlang:",
+        yt_video_btn="📹 Videoni olish",
+        yt_audio_btn="🎵 Faqat audio",
+        direct_youtube_download=False
     ),
 
     # Bot 7: Nasiba Save (Yumshoq & Go'zal uslub)
@@ -223,7 +251,11 @@ PROFILES = [
         video_caption_template="💖 <b>@{bot_username}</b> orqali saqlandi",
         audio_caption_template="🎶 <b>{title}</b>\n💖 @{bot_username}",
         music_button_text="🎧 Qo'shig'ini yuklash",
-        group_button_text="🌺 Guruhga qo'shish ✨"
+        group_button_text="🌺 Guruhga qo'shish ✨",
+        yt_format_text="\n\n🌺 Marhamat, formatni tanlang:",
+        yt_video_btn="🌷 Video saqlash",
+        yt_audio_btn="🌸 Audio musiqa",
+        direct_youtube_download=False
     ),
 
     # Bot 8: Akbarjon Media Bot (Cyber / Cinema / Pro Media uslub)
@@ -249,7 +281,11 @@ PROFILES = [
         video_caption_template="🎬 <b>@{bot_username}</b> | <i>Media Markazi</i>",
         audio_caption_template="💽 <b>{title}</b>\n🎬 @{bot_username}",
         music_button_text="💽 MP3 musiqani ajratish",
-        group_button_text="🛸 Guruhga qo'shish ⚡️"
+        group_button_text="🛸 Guruhga qo'shish ⚡️",
+        yt_format_text="\n\n🛸 Akbarjon Media — Formatni tanlang:",
+        yt_video_btn="🎬 Video yuklash",
+        yt_audio_btn="💽 MP3 ajratish",
+        direct_youtube_download=True
     ),
 ]
 

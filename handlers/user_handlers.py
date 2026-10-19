@@ -50,8 +50,9 @@ async def handle_text(message: Message, bot: Bot):
         username = await get_bot_username(bot)
         platform = detect_platform(url)
 
-        # YouTube UI matching Image 3 (SaqlaBot): Preview photo + format buttons
-        if platform == "youtube":
+        # YouTube UI: If direct_youtube_download is True (e.g. Akbarjon Media Bot), bypass the format preview card
+        # and download the video directly at maximum speed!
+        if platform == "youtube" and not profile.direct_youtube_download:
             video_id = extract_youtube_video_id(url)
             if not video_id:
                 await message.reply("❌ <b>YouTube havolasi yaroqsiz.</b>", parse_mode="HTML")
@@ -62,8 +63,8 @@ async def handle_text(message: Message, bot: Bot):
             author = yt_info.get("author", "YouTube")
             thumb_url = yt_info.get("thumbnail_url", f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg")
 
-            caption = f"📼 <b>{title} | {author} →</b>\n\nYuklab olish formatlari ↓"
-            keyboard = get_youtube_preview_keyboard(video_id)
+            caption = f"📼 <b>{title} | {author} →</b>{profile.yt_format_text}"
+            keyboard = get_youtube_preview_keyboard(video_id, profile=profile)
 
             try:
                 await message.reply_photo(
@@ -125,7 +126,10 @@ async def handle_text(message: Message, bot: Bot):
             token = res.get("token")
             has_audio = res.get("has_audio", True)
 
-            caption = profile.format_video_caption(username, title=title, author=author)
+            if platform == "youtube":
+                caption = profile.format_youtube_caption(username, title=title, author=author)
+            else:
+                caption = profile.format_video_caption(username, title=title, author=author)
 
             if media_type == "video":
                 await message.reply_video(

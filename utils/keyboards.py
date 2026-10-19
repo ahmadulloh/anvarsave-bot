@@ -47,16 +47,16 @@ def get_video_keyboard(
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-def get_youtube_preview_keyboard(video_id: str) -> InlineKeyboardMarkup:
+def get_youtube_preview_keyboard(video_id: str, profile: BotProfile | None = None) -> InlineKeyboardMarkup:
     """
-    Format selection keyboard matching Image 3 (SaqlaBot):
-    [ 📦 Video ]   [ 🎧 Audio ]
+    Format selection keyboard customized per bot profile
     """
+    p = profile or PROFILES[0]
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="📦 Video", callback_data=f"yt:v:{video_id}"),
-                InlineKeyboardButton(text="🎧 Audio", callback_data=f"yt:a:{video_id}")
+                InlineKeyboardButton(text=p.yt_video_btn, callback_data=f"yt:v:{video_id}"),
+                InlineKeyboardButton(text=p.yt_audio_btn, callback_data=f"yt:a:{video_id}")
             ]
         ]
     )

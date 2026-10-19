@@ -330,6 +330,8 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple
         "noplaylist": True,
         "socket_timeout": 30,
         "nocheckcertificate": True,
+        "geo_bypass": True,
+        "geo_bypass_country": "US",
         "extractor_args": {
             "youtube": {
                 "player_client": ["android", "ios", "web_creator", "mweb"]
@@ -347,6 +349,7 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple
 
     if is_audio:
         audio_formats = [
+            "ba[ext=m4a]/ba/best",
             "140/ba/b",
             "bestaudio/best",
         ]
@@ -371,10 +374,10 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple
                     last_error_str = "bot_detection"
         return None, last_error_str
     else:
-        # Prioritize progressive formats (22, 18) to avoid SABR / 403 blocks on server IPs
         video_formats = [
+            "bv*[ext=mp4][height<=1080]+ba[ext=m4a]/bv*[height<=1080]+ba/b[ext=mp4]/best",
+            "bv*[height<=720]+ba/b",
             "22/18/best[height<=720][ext=mp4]/best[height<=720]/best",
-            "18/best[height<=480][ext=mp4]/best",
             "best[filesize<=48M]/best",
         ]
         for fmt in video_formats:
@@ -403,7 +406,7 @@ async def download_with_ytdlp(url: str, platform: str = "general") -> dict:
         return {"file_path": None, "error": err}
 
     # Find the downloaded file
-    files = list(DOWNLOAD_DIR.glob(f"{file_id}.*"))
+    files = [f for f in DOWNLOAD_DIR.glob(f"{file_id}.*") if f.suffix.lower() not in [".part", ".ytdl", ".temp"]]
     if not files:
         return {"file_path": None, "error": err}
 
@@ -452,6 +455,8 @@ def _run_youtube_download_sync(video_id: str, is_audio: bool = False) -> tuple[d
         "noplaylist": True,
         "socket_timeout": 30,
         "nocheckcertificate": True,
+        "geo_bypass": True,
+        "geo_bypass_country": "US",
         "extractor_args": {
             "youtube": {
                 "player_client": ["android", "ios", "web_creator", "mweb"]
@@ -468,10 +473,11 @@ def _run_youtube_download_sync(video_id: str, is_audio: bool = False) -> tuple[d
     last_error = None
 
     if is_audio:
-        # Download audio stream or progressive 18 and convert to mp3
+        # Download audio stream or progressive format and convert to mp3
         audio_formats = [
+            "ba[ext=m4a]/ba/best",
             "140/ba/b",
-            "18/best[height<=720]/best",
+            "bestaudio/best",
         ]
         for fmt in audio_formats:
             ydl_opts = dict(base_opts)
@@ -480,7 +486,7 @@ def _run_youtube_download_sync(video_id: str, is_audio: bool = False) -> tuple[d
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     if info:
-                        files = list(DOWNLOAD_DIR.glob(f"{file_id}.*"))
+                        files = [f for f in DOWNLOAD_DIR.glob(f"{file_id}.*") if f.suffix.lower() not in [".part", ".ytdl", ".temp"]]
                         if files:
                             src_file = files[0]
                             mp3_file = DOWNLOAD_DIR / f"{file_id}.mp3"
@@ -510,10 +516,11 @@ def _run_youtube_download_sync(video_id: str, is_audio: bool = False) -> tuple[d
                     last_error = "bot_detection"
         return None, last_error
     else:
-        # Download video: prioritize 22 (720p), 18 (360p) progressive streams
+        # Download video: high speed adaptive or progressive stream
         video_formats = [
+            "bv*[ext=mp4][height<=1080]+ba[ext=m4a]/bv*[height<=1080]+ba/b[ext=mp4]/best",
+            "bv*[height<=720]+ba/b",
             "22/18/best[height<=720][ext=mp4]/best[height<=720]/best",
-            "18/best[height<=480][ext=mp4]/best",
             "best[filesize<=48M]/best",
         ]
         for fmt in video_formats:
@@ -523,7 +530,7 @@ def _run_youtube_download_sync(video_id: str, is_audio: bool = False) -> tuple[d
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     if info:
-                        files = list(DOWNLOAD_DIR.glob(f"{file_id}.*"))
+                        files = [f for f in DOWNLOAD_DIR.glob(f"{file_id}.*") if f.suffix.lower() not in [".part", ".ytdl", ".temp"]]
                         if files:
                             return {
                                 "file_path": str(files[0]),
