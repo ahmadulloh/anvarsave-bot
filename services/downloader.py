@@ -318,6 +318,15 @@ def get_ffmpeg_path() -> str | None:
     return shutil.which("ffmpeg")
 
 
+def get_local_proxy() -> str | None:
+    """Detect if local Cloudflare WARP socks5 proxy (127.0.0.1:40000) is running"""
+    import socket
+    try:
+        with socket.create_connection(("127.0.0.1", 40000), timeout=0.3):
+            return "socks5://127.0.0.1:40000"
+    except Exception:
+        return None
+
 # ================= GENERAL YT-DLP DOWNLOADER =================
 def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple[dict | None, str | None]:
     """Synchronous yt-dlp worker with robust formats and ffmpeg integration"""
@@ -328,13 +337,18 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
-        "socket_timeout": 15,
+        "socket_timeout": 20,
         "nocheckcertificate": True,
         "geo_bypass": True,
         "geo_bypass_country": "US",
         "remote_components": ["ejs:github"],
         "concurrent_fragment_downloads": 4,
+        "merge_output_format": "mp4",
     }
+    proxy = get_local_proxy()
+    if proxy:
+        base_opts["proxy"] = proxy
+
     if ffmpeg_bin:
         base_opts["ffmpeg_location"] = ffmpeg_bin
 
@@ -371,9 +385,9 @@ def _run_ytdlp_download(url: str, outtmpl: str, is_audio: bool = False) -> tuple
         return None, last_error_str
     else:
         video_formats = [
-            "bv*[ext=mp4][height<=720]+ba[ext=m4a]/bv*[height<=720]+ba/b[ext=mp4]/best",
-            "bv*[ext=mp4][height<=1080]+ba[ext=m4a]/bv*[height<=1080]+ba/best",
-            "b[ext=mp4]/best",
+            "bv*[height<=720]+ba/b[height<=720]/best",
+            "bv*[height<=1080]+ba/best",
+            "b",
         ]
         for fmt in video_formats:
             ydl_opts = dict(base_opts)
@@ -448,13 +462,18 @@ def _run_youtube_download_sync(video_id: str, is_audio: bool = False) -> tuple[d
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
-        "socket_timeout": 15,
+        "socket_timeout": 20,
         "nocheckcertificate": True,
         "geo_bypass": True,
         "geo_bypass_country": "US",
         "remote_components": ["ejs:github"],
         "concurrent_fragment_downloads": 4,
+        "merge_output_format": "mp4",
     }
+    proxy = get_local_proxy()
+    if proxy:
+        base_opts["proxy"] = proxy
+
     if ffmpeg_bin:
         base_opts["ffmpeg_location"] = ffmpeg_bin
 
@@ -509,9 +528,9 @@ def _run_youtube_download_sync(video_id: str, is_audio: bool = False) -> tuple[d
     else:
         # Download video: high speed adaptive or progressive stream
         video_formats = [
-            "bv*[ext=mp4][height<=720]+ba[ext=m4a]/bv*[height<=720]+ba/b[ext=mp4]/best",
-            "bv*[ext=mp4][height<=1080]+ba[ext=m4a]/bv*[height<=1080]+ba/best",
-            "b[ext=mp4]/best",
+            "bv*[height<=720]+ba/b[height<=720]/best",
+            "bv*[height<=1080]+ba/best",
+            "b",
         ]
         for fmt in video_formats:
             ydl_opts = dict(base_opts)
