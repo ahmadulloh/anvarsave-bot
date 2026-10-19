@@ -225,6 +225,32 @@ PROFILES = [
         music_button_text="🎧 Qo'shig'ini yuklash",
         group_button_text="🌺 Guruhga qo'shish ✨"
     ),
+
+    # Bot 8: Akbarjon Media Bot (Cyber / Cinema / Pro Media uslub)
+    BotProfile(
+        id=8,
+        name="Akbarjon Media Bot",
+        start_text_template=(
+            "🎬 <b>Salom! @{bot_username} — Akbarjon Media Botiga xush kelibsiz!</b>\n\n"
+            "Ijtimoiy tarmoqlardagi har qanday mediani eng yuqori <b>Full HD</b> sifatda bir zumda yuklab oling:\n\n"
+            "🛸 <b>Instagram</b> — Barcha Reels, Stories, Karusel va postlar\n"
+            "🛸 <b>TikTok</b> — Mutlaqo suvsiz va toza audio bilan\n"
+            "🛸 <b>YouTube</b> — Shorts va to'liq formatdagi videolar\n\n"
+            "⚡️ <i>Yuklab olish uchun video havolasini yuboring!</i>\n"
+            "👥 <b>Bot guruhlarda ham chaqqon ishlaydi!</b>"
+        ),
+        help_text_template=(
+            "🎬 <b>Qisqa qo'llanma:</b>\n\n"
+            "1️⃣ <b>Instagram, TikTok yoki YouTube</b> ssilkasini botga tashlang.\n"
+            "2️⃣ Bot bir zumda videoni eng yuqori sifatda yetkazib beradi.\n"
+            "3️⃣ Audio format kerak bo'lsa, '💽 MP3 musiqani ajratish' tugmasini bosing!"
+        ),
+        loading_text="🛸 <b>Media tahlil qilinmoqda, bir soniya...</b>",
+        video_caption_template="🎬 <b>@{bot_username}</b> | <i>Media Markazi</i>",
+        audio_caption_template="💽 <b>{title}</b>\n🎬 @{bot_username}",
+        music_button_text="💽 MP3 musiqani ajratish",
+        group_button_text="🛸 Guruhga qo'shish ⚡️"
+    ),
 ]
 
 _TOKEN_PROFILE_MAP: Dict[str, BotProfile] = {}
@@ -250,6 +276,8 @@ def register_bot_profile(bot_token: str, profile_index: int, bot_id: int | None 
             idx = 5
         elif "nasiba" in u:
             idx = 6
+        elif "akbar" in u or "media" in u:
+            idx = 7
 
     profile = PROFILES[idx]
     _TOKEN_PROFILE_MAP[bot_token] = profile

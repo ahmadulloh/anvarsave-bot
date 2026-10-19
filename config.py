@@ -22,7 +22,7 @@ BOT_TOKEN_4 = os.getenv("BOT_TOKEN_4", "8805792544:AAGizRwhlgKD4uIL31P5EQHBcocnr
 BOT_TOKEN_5 = os.getenv("BOT_TOKEN_5", "8952615352:AAG--Vu1K_TAykDktccILUeu5DyIO_e9w3A").strip()
 BOT_TOKEN_6 = os.getenv("BOT_TOKEN_6", "8772058851:AAHGqrbrIrcVa7Pj6XT_d0SAg3IAQQFe6uA").strip()
 BOT_TOKEN_7 = os.getenv("BOT_TOKEN_7", "8802016873:AAHKzveVxJNzhq3q5KmW9abE50xzLPFIDb0").strip()
-BOT_TOKEN_8 = os.getenv("BOT_TOKEN_8", "").strip()
+BOT_TOKEN_8 = os.getenv("BOT_TOKEN_8", "8896722867:AAH0JNtkfZglMdUsDdhEfca5r4ePECyqh6s").strip()
 BOT_TOKEN_9 = os.getenv("BOT_TOKEN_9", "").strip()
 BOT_TOKEN_10 = os.getenv("BOT_TOKEN_10", "").strip()
 
